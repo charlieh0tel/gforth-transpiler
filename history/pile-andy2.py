@@ -1,5 +1,3 @@
-#!/usr/bin/env python2
-
 import re, sys
 
 VM_HEADER = r'''
@@ -65,12 +63,12 @@ long long PairToLongLong(word hi, word lo) {
 }
 
 void VMInitialize() {
-  SAY(stderr, "sizeof (int) = %lu\n", (unsigned long) sizeof(int));
-  SAY(stderr, "sizeof (word) = %lu\n", (unsigned long) sizeof(word));
-  SAY(stderr, "sizeof (uword) = %lu\n", (unsigned long) sizeof(uword));
-  SAY(stderr, "sizeof (long) = %lu\n", (unsigned long) sizeof(long));
-  SAY(stderr, "sizeof (char*) = %lu\n", (unsigned long) sizeof(char*));
-  SAY(stderr, "sizeof (word*) = %lu\n", (unsigned long) sizeof(word*));
+  SAY(stderr, "sizeof (int) = %d\n", sizeof(int));
+  SAY(stderr, "sizeof (word) = %d\n", sizeof(word));
+  SAY(stderr, "sizeof (uword) = %d\n", sizeof(uword));
+  SAY(stderr, "sizeof (long) = %d\n", sizeof(long));
+  SAY(stderr, "sizeof (char*) = %d\n", sizeof(char*));
+  SAY(stderr, "sizeof (word*) = %d\n", sizeof(word*));
 
   here = (word)(&heap[0]);
   SAY(stderr, "=== here = %ld\n", here);
@@ -223,24 +221,11 @@ bin min
   z = (a<b) ? a : b;
 bin max
   z = (a<b) ? b : a;
-def d0<
-  word hi = pop();
-  word lo = pop();
-  long long x = PairToLongLong(hi, lo);
-  push (x < 0);
 def d0>
   word hi = pop();
   word lo = pop();
   long long x = PairToLongLong(hi, lo);
   push (x > 0);
-def dnegate
-  word hi = pop();
-  word lo = pop();
-  long long x = PairToLongLong(hi, lo);
-  x = (-x);
-  LongLongToPair((long long)x, &hi, &lo);
-  push(lo);
-  push(hi);
 
 def d. ( lo hi - )
   word hi = pop();
@@ -334,6 +319,7 @@ def accept
   int n = strlen(buffer);
   if (buffer[n-1] == '\n') buffer[n-1] = '\0';
   push(strlen(buffer));
+
 def +place
   char* whither = (char*) pop();
   word len = pop();
@@ -693,8 +679,6 @@ fun flog
   z = log(a);
 fun fexp
   z = exp(a);
-fbin fatan2
-  z = atan2(a, b);
 '''
 
 DEFINED_WORDS = set()
@@ -765,9 +749,9 @@ def CompilePrims(prim_defs):
             name = line.split()[1]
             DEFINED_WORDS.add(name)
             nom = Esc(name)
-            print( 'void F_%s(); // %s' % (nom, name), file=Decls)
-            print( ender, file=Defs)
-            print( 'inline void F_%s() { // %s' % (nom, name), file=Defs)
+            print >>Decls, 'void F_%s(); // %s' % (nom, name)
+            print >>Defs, ender
+            print >>Defs, 'inline void F_%s() { // %s' % (nom, name)
             ender = '}'
             fd = Defs
             sig = ParseSignature(line.split()[2:])
@@ -775,68 +759,68 @@ def CompilePrims(prim_defs):
             name = line.split()[1]
             DEFINED_WORDS.add(name)
             nom = Esc(name)
-            print( 'void F_%s(); // %s' % (nom, name), file=Decls)
-            print( ender, file=Defs)
-            print( '''inline void F_%s() { // %s
+            print >>Decls, 'void F_%s(); // %s' % (nom, name)
+            print >>Defs, ender
+            print >>Defs, '''inline void F_%s() { // %s'
               word a = ds[dp-1];
               word b = ds[dp];
               word z = 0;
-              ''' % (nom, name), file=Defs)
+              ''' % (nom, name)
             ender = 'ds[--dp] = z; }'
             fd = Defs
         elif cmd == 'un':
             name = line.split()[1]
             DEFINED_WORDS.add(name)
             nom = Esc(name)
-            print( 'void F_%s(); // %s' % (nom, name), file=Decls)
-            print( ender, file=Defs)
-            print( '''inline void F_%s() { // %s
+            print >>Decls, 'void F_%s(); // %s' % (nom, name)
+            print >>Defs, ender
+            print >>Defs, '''inline void F_%s() { // %s'
               word a = ds[dp];
               word z = 0;
-              ''' % (nom, name), file=Defs)
+              ''' % (nom, name)
             ender = 'ds[dp] = z; }'
             fd = Defs
         elif cmd == 'fun':
             name = line.split()[1]
             DEFINED_WORDS.add(name)
             nom = Esc(name)
-            print( 'void F_%s(); // %s' % (nom, name), file=Decls)
-            print( ender, file=Defs)
-            print( '''inline void F_%s() { // %s
+            print >>Decls, 'void F_%s(); // %s' % (nom, name)
+            print >>Defs, ender
+            print >>Defs, '''inline void F_%s() { // %s'
               double a = fs[fp];
               double z = 0;
-              ''' % (nom, name), file=Defs)
+              ''' % (nom, name)
             ender = 'fs[fp] = z; }'
             fd = Defs
         elif cmd == 'fbin':
             name = line.split()[1]
             DEFINED_WORDS.add(name)
             nom = Esc(name)
-            print( 'void F_%s(); // %s' % (nom, name), file=Decls)
-            print( ender, file=Defs)
-            print( '''inline void F_%s() { // %s
+            print >>Decls, 'void F_%s(); // %s' % (nom, name)
+            print >>Defs, ender
+            print >>Defs, '''inline void F_%s() { // %s'
               double a = fs[fp-1];
               double b = fs[fp];
               double z = 0;
-              ''' % (nom, name), file=Defs)
+              ''' % (nom, name)
             ender = 'fs[--fp] = z; }'
             fd = Defs
         elif cmd == 'fbinw':
             name = line.split()[1]
             DEFINED_WORDS.add(name)
             nom = Esc(name)
-            print( 'void F_%s(); // %s' % (nom, name), file=Decls)
-            print( ender, file=Defs)
-            print( '''inline void F_%s() { // %s
+            print >>Decls, 'void F_%s(); // %s' % (nom, name)
+            print >>Defs, ender
+            print >>Defs, '''inline void F_%s() { // %s'
               double b = fs[fp--];
               double a = fs[fp--];
               word z = 0;
-              ''' % (nom, name), file=Defs)
+              ''' % (nom, name)
             ender = 'ds[++dp] = z; }'
             fd = Defs
         else:
-            print( '        %s' % line, file=fd)
-    print( ender, file=Defs)
+            print >>fd, '        %s' % line
+    print >>Defs, ender
 
     Decls.close()
     Defs.close()
@@ -882,23 +866,14 @@ class Lexer(object):
         self.program = program
         self.i = 0
         self.n = len(self.program)
-        self.lineNo = 1
 
     def getChar(self):
         if self.i < self.n:
             ch = self.program[self.i]
-            if (ch == '\n'):
-                self.lineNo += 1
             self.i += 1
             return ch
         else:
             return ''
-
-    def rewindChar(self):
-        assert self.i
-        self.i -= 1
-        if self.program[self.i] == '\n':
-            self.lineNo -= 1
 
     def mustGetWord(self):
         w = self.getWord().lower()
@@ -912,33 +887,34 @@ class Lexer(object):
 
     def getWord(self):
         # Skip white space.
-        while True:
-            ch = self.getChar()
-            if not ch: return ''
+        while self.i < self.n:
+            ch = self.program[self.i]
             if ch not in WHITE: break
+            self.i += 1
 
-        word = str(ch)
-        while True:
-            ch = self.getChar()
-            if not ch: break
-            if ch in WHITE:
-                self.rewindChar()
-                break
-            word += ch
-        return word
+        # Check for EOF.
+        if self.i >= self.n: return ''
+
+        # Find non-white span.
+        self.start = self.i
+        while self.i < self.n:
+            ch = self.program[self.i]
+            if ch in WHITE: break
+            self.i += 1
+        self.limit = self.i
+
+        # Consume the terminating white char.
+        if self.i < self.n: self.i += 1
+
+        return self.program[self.start:self.limit]
 
     def getString(self, termination):
         s = ''
-        while True:
+        ch = 'START'
+        while ch and ch != termination:
             ch = self.getChar()
-            if not ch: break
-            if ch == termination: break
-            s += ch
+            if ch != termination: s += ch
         return s
-
-    def getLineNo(self):
-        return self.lineNo
-
 
 class Parser(object):
     def __init__(self):
@@ -988,8 +964,8 @@ class Parser(object):
         elif w == 's"': # `s"` gets string thru `"`
             s = self.lexer.getString(termination='"')
             k = Serial()
-            n = len(s)+1  # +1 for the final \0.
-            self.defs += 'const char S_%d[%d] = "%s"; // `%s`\n' % (k, n, CEscape(s), s)
+            # self.decls += 'const char S_%d[]; // %s\n' % (k, s)
+            self.defs += 'const char S_%d[] = "%s"; // `%s`\n' % (k, CEscape(s), s)
 
             return 'push((word) &S_%d[0]); push(strlen(S_%d)); // `%s`' % (k, k, s)
 
@@ -1077,11 +1053,11 @@ class Parser(object):
             return self.Colon()
 
         elif w == "begin": return "{ while (1) {"
-
+            
         elif w == "while": return "{ if (!pop()) break; }"
-
+        
         elif w == "repeat": return "} }"
-
+        
         elif w == "do": return '''
             {
               int j = i;
@@ -1106,27 +1082,8 @@ class Parser(object):
                 }}
             '''
 
-        elif w == "case": return '''
-                { // case
-                word _case_ = pop();
-                '''
-
-        elif w == "of": return '''
-                { // of
-                if (_case_ == pop()) {
-                '''
-
-        elif w == "endof": return '''
-                                }
-                }  // endof
-                '''
-
-        elif w == "endcase": return '''
-                }  // endcase
-                '''
-
         else:
-            raise Exception('Unknown action: %s at line %d' % (w, self.lexer.getLineNo()))
+            raise Exception('Unknown action: %s' % w)
 
     def Colon(self):
         name, nom = self.lexer.getWordToDefine()
@@ -1141,20 +1098,19 @@ class Parser(object):
             body += '''\nShowStacks();\n'''
             w = self.lexer.mustGetWord()
 
-        self.decls += '''void F_%s(); // %s
-''' % (nom, name)
+        self.decls += '''void F_%s(); // %s''' % (nom, name)
         self.defs += '''inline void F_%s() { // %s
 int i=0, j=0;
 %s
         }
-''' % (nom, name, body)
+        ''' % (nom, name, body)
 
 CompilePrims(PRIM_DEFINITIONS)
 parser = Parser()
 for filename in sys.argv[1:]:
     parser.Parse(open(filename).read())
 
-print( '''
+print '''
 // VM_HEADER
 %s
 // DECLARATIONS
@@ -1179,6 +1135,6 @@ int main(int argc, const char* argv[]) {
   %s
 }
 // END
-''' % (VM_HEADER, parser.decls, str(Decls), parser.defs, str(Defs), parser.main))
+''' % (VM_HEADER, parser.decls, str(Decls), parser.defs, str(Defs), parser.main)
 
 pass
